@@ -3,24 +3,42 @@
   var SAMPLE_RATE = 44100;
   var BEAT_LENGTH = (60/BPM) * SAMPLE_RATE;
 
-  var track = 'x ..o .x o..o ..'.split('');
-  var data = [];
+  $(function () {
+    var $input = $('<input />');
+    var $button = $('<button>Play</button>');
+    $input.val('x ..o .x o..o ..');
+    $('body').append($input);
+    $('body').append($button);
+    $button.click(function () {
+      var track = $input.val().split('');
+      playTrack(track);
+    });
 
-  track.forEach(function (beat) {
-    switch (beat) {
-    case 'x':
-      kick(1);
-      break;
-    case 'o':
-      snare(1);
-      break;
-    case '.':
-      hat(0.5);
-      break
-    default:
-      silence();
-    }
   });
+
+  function playTrack(track) {
+    data = [];
+    track.forEach(function (beat) {
+      switch (beat) {
+      case 'x':
+        kick(1);
+        break;
+      case 'o':
+        snare(1);
+        break;
+      case '.':
+        hat(0.5);
+        break
+      default:
+        silence();
+      }
+    });
+
+    playAudio();
+  }
+
+  var data;
+
 
   function silence() {
     for (var i = 0; i < BEAT_LENGTH / 4; i++) {
@@ -83,7 +101,6 @@
     return result;
   }
 
-  playAudio();
 
 
   function playAudio() {
