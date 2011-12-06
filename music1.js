@@ -29,18 +29,34 @@
   }
 
   function kick(level) {
-    data.push(1);
-    data = data.concat(generateSine(200, level, BEAT_LENGTH / 4));
+    var sine = generateSine(100, level, BEAT_LENGTH / 4);
+    var ramp = generateRamp(BEAT_LENGTH / 4);
+    var convolved = convolve(sine, ramp);
+    data = data.concat(convolved);
   }
 
   function snare(level) {
-    data.push(1);
-    data = data.concat(generateSine(440, level, BEAT_LENGTH / 4));
+    var noise = generateNoise(level, BEAT_LENGTH / 4);
+    var ramp = generateRamp(BEAT_LENGTH / 4);
+    var convolved = convolve(noise, ramp);
+    data = data.concat(convolved);
   }
 
   function hat(level) {
-    data.push(1);
-    data = data.concat(generateSine(1000, level, BEAT_LENGTH / 4));
+    var sine = generateSine(10000, level, BEAT_LENGTH / 4);
+    var noise = generateNoise(level, BEAT_LENGTH / 4);
+    var ramp = generateRamp(BEAT_LENGTH / 4);
+    var convolved = convolve(sine, noise);
+    convolved = convolve(convolved, ramp);
+    data = data.concat(convolved);
+  }
+
+  function generateNoise(level, duration) {
+    var noise = [];
+    for (var i = 0; i < duration; i++) {
+      noise.push(Math.random() * level);
+    }
+    return noise;
   }
 
   function generateSine(freq, level, duration) {
@@ -51,6 +67,22 @@
     return sine;
   }
 
+  function generateRamp(duration) {
+    var arr = [];
+    for (var i = 0; i < duration; i++) {
+      arr.push(1 - (i / duration));
+    }
+    return arr;
+  }
+
+  function convolve(arr1, arr2) {
+    var result = [];
+    for (var i = 0, len = arr1.length; i < len; i++) {
+      result.push(arr1[i] * arr2[i]);
+    }
+    return result;
+  }
+
   playAudio();
 
 
@@ -59,7 +91,6 @@
       return (datum * 127) + 127;
     });
     normalised = normalised.concat(normalised, normalised, normalised);
-    console.log(normalised.slice(0, 100).join(','));
     var wave = new RIFFWAVE(normalised);
     var audio = new Audio(wave.dataURI);
     audio.play();
