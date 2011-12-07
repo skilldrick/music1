@@ -48,7 +48,7 @@
       return false;
     }
 
-    var tracks = document.location.search.split('track[]=').slice(1);
+    var tracks = document.location.search.split(/(?:&|\?)track\[\]=/).slice(1);
     var decoded = tracks.map(decodeURIComponent);
     return decoded;
   }
