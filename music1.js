@@ -4,16 +4,17 @@
   var BEAT_LENGTH = (60/BPM) * SAMPLE_RATE;
 
   $(function () {
-    var $input = $('<input />');
-    var $button = $('<button>Play</button>');
     var defaultTracks = [
       'x      x        ',
       '    o    o  o   ',
       '. ... .. .... ..'
     ];
+    defaultTracks = readTracksFromQueryString() || defaultTracks;
     var inputs = defaultTracks.map(createInput);
-    $('body').append($button);
-    $button.click(function () {
+    var $play = $('<button>Play</button>');
+    $('body').append($play);
+
+    $play.click(function () {
       var track = inputs[0].val().split('');
 
       var channels = inputs.map(function ($input) {
@@ -29,7 +30,28 @@
       playAudio(mixDown);
     });
 
+    var $save = $('<button>Save</button>');
+    $('body').append($save);
+
+    $save.click(function () {
+      var params = inputs.map(function ($input) {
+        return 'track[]=' + encodeURIComponent($input.val());
+      });
+      var url = '?' + params.join('&');
+      document.location = url;
+    });
+
   });
+
+  function readTracksFromQueryString() {
+    if (!document.location.search) {
+      return false;
+    }
+
+    var tracks = document.location.search.split('track[]=').slice(1);
+    var decoded = tracks.map(decodeURIComponent);
+    return decoded;
+  }
 
   function createInput(value) {
     var $input = $('<input />');
