@@ -6,68 +6,89 @@
   $(function () {
     var $input = $('<input />');
     var $button = $('<button>Play</button>');
-    $input.val('x ..o .x o..o ..');
-    $('body').append($input);
+    var defaultTracks = [
+      'x      x        ',
+      '    o    o  o   ',
+      '. ... .. .... ..'
+    ];
+    var inputs = defaultTracks.map(createInput);
     $('body').append($button);
     $button.click(function () {
-      var track = $input.val().split('');
-      playTrack(track);
+      var track = inputs[0].val().split('');
+
+      var channels = inputs.map(function ($input) {
+        var track = $input.val().split('');
+        return new Channel(track);
+      });
+
+      channelData = channels.map(function (channel) {
+        return channel.generateData();
+      });
+
+      var mixDown = mix(channelData);
+      playAudio(mixDown);
     });
 
   });
 
-  function playTrack(track) {
-    data = [];
-    track.forEach(function (beat) {
+  function createInput(value) {
+    var $input = $('<input />');
+    $input.val(value);
+    $input.attr('size', 16);
+    $('body').append($input);
+    $('body').append('<br />');
+    return $input;
+  }
+
+  function Channel(track) {
+    this.track = track;
+    this.data = [];
+  }
+  Channel.prototype.generateData = function () {
+    this.track.forEach(function (beat) {
       switch (beat) {
       case 'x':
-        kick(1);
+        this.kick(1);
         break;
       case 'o':
-        snare(1);
+        this.snare(1);
         break;
       case '.':
-        hat(0.5);
+        this.hat(0.5);
         break
       default:
-        silence();
+        this.silence();
       }
-    });
+    }, this);
 
-    playAudio();
+    return this.data;
   }
-
-  var data;
-
-
-  function silence() {
+  Channel.prototype.silence = function () {
     for (var i = 0; i < BEAT_LENGTH / 4; i++) {
-      data.push(0);
+      this.data.push(0);
     }
   }
-
-  function kick(level) {
+  Channel.prototype.kick = function (level) {
     var sine = generateSine(100, level, BEAT_LENGTH / 4);
     var ramp = generateRamp(BEAT_LENGTH / 4);
     var convolved = convolve(sine, ramp);
-    data = data.concat(convolved);
+    this.data = this.data.concat(convolved);
   }
-
-  function snare(level) {
+  Channel.prototype.snare = function (level) {
     var noise = generateNoise(level, BEAT_LENGTH / 4);
     var ramp = generateRamp(BEAT_LENGTH / 4);
     var convolved = convolve(noise, ramp);
-    data = data.concat(convolved);
+    this.data = this.data.concat(convolved);
   }
-
-  function hat(level) {
+  Channel.prototype.hat = function (level) {
     var sine = generateSine(10000, level, BEAT_LENGTH / 4);
     var noise = generateNoise(level, BEAT_LENGTH / 4);
     var ramp = generateRamp(BEAT_LENGTH / 4);
     var convolved = convolve(sine, noise);
     convolved = convolve(convolved, ramp);
-    data = data.concat(convolved);
+    this.data = this.data.concat(convolved);
   }
+
 
   function generateNoise(level, duration) {
     var noise = [];
@@ -101,9 +122,27 @@
     return result;
   }
 
+  function mix() {
+    var channels;
+    if (arguments.length === 1) {
+      channels = arguments[0];
+    } else {
+      channels = [].slice.call(arguments);
+    }
+    var channelCount = channels.length;
+    var mixdown = [];
+    for (var i = 0, len = channels[0].length; i < len; i++) {
+      mixdown[i] = 0;
+      for (var j = 0; j < channelCount; j++) {
+        mixdown[i] += channels[j][i] / channelCount;
+      }
+    }
+    return mixdown;
+  }
 
+  window.mix = mix;
 
-  function playAudio() {
+  function playAudio(data) {
     var normalised = data.map(function (datum) {
       return (datum * 127) + 127;
     });
@@ -112,5 +151,4 @@
     var audio = new Audio(wave.dataURI);
     audio.play();
   }
-
 })();
